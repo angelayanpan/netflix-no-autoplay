@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Netflix No Autoplay Banner",
   "short_name": "No Autoplay",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Silences and pauses the autoplay video banner on Netflix's home screen. Lightweight, no tracking, works instantly.",
   "permissions": ["scripting", "storage", "tabs"],
   "host_permissions": ["https://www.netflix.com/*"],
