@@ -3,14 +3,13 @@
 let enabled = true;
 const STORAGE_KEY = "netflix_no_autoplay_enabled";
 
-// Load user preference — use exact stored boolean, no ambiguity
+// Load user preference
 chrome.storage.local.get([STORAGE_KEY], (result) => {
   if (result[STORAGE_KEY] === undefined) {
-    // First install — default ON and save it explicitly
     enabled = true;
     chrome.storage.local.set({ [STORAGE_KEY]: true });
   } else {
-    enabled = result[STORAGE_KEY]; // true or false, exactly as saved
+    enabled = result[STORAGE_KEY];
   }
   if (enabled) init();
 });
@@ -20,7 +19,6 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "TOGGLE") {
     enabled = msg.enabled;
     if (!enabled) {
-      // Re-allow videos to play naturally (just stop intercepting)
       observer.disconnect();
     } else {
       pauseBannerVideos();
@@ -29,36 +27,37 @@ chrome.runtime.onMessage.addListener((msg) => {
   }
 });
 
+// Only match videos inside banner/billboard containers, never on watch pages
+function isBannerVideo(video) {
+  if (window.location.pathname.startsWith("/watch")) return false;
+  return !!video.closest('[data-uia="billboard"]');
+}
+
 function pauseBannerVideos() {
-  // Target the hero/billboard video elements Netflix uses
-  const videos = document.querySelectorAll(
-    '.billboard video, .hero-image-wrapper video'
-  );
-
-  videos.forEach(pause);
-
+  document.querySelectorAll('[data-uia="billboard"] video').forEach(pause);
 }
 
 function pause(video) {
   if (!video) return;
 
-  // Pause and mute
   video.pause();
   video.muted = true;
 
-  // Override play() so Netflix's JS can't restart it
   if (!video._playOverridden) {
     video._playOverridden = true;
     const originalPlay = video.play.bind(video);
     video.play = function () {
-      // Re-check storage each time so toggle changes take effect without refresh
+      // Always allow play on watch pages
+      if (window.location.pathname.startsWith("/watch")) return originalPlay();
+
+      // Re-check storage so toggle takes effect without refresh
       return new Promise((resolve) => {
         chrome.storage.local.get([STORAGE_KEY], (result) => {
           const isEnabled = result[STORAGE_KEY] === undefined ? true : result[STORAGE_KEY];
-          if (!isEnabled) {
+          if (!isEnabled || !isBannerVideo(video)) {
             originalPlay().then(resolve).catch(resolve);
           } else {
-            console.log("[Netflix No Autoplay] Blocked autoplay on banner video");
+            console.log("[Netflix No Autoplay] Blocked banner autoplay");
             resolve();
           }
         });
@@ -66,22 +65,14 @@ function pause(video) {
     };
   }
 
-  // Also listen for any attempt to unpause via the 'play' event
   video.addEventListener("play", onPlay);
 }
 
 function onPlay(e) {
   if (!enabled) return;
+  if (window.location.pathname.startsWith("/watch")) return;
   const video = e.target;
-  // Only intercept if it looks like the banner (not the actual content player)
-  const style = video.getAttribute("style") || "";
-  const isBanner =
-    style.includes("position: absolute") &&
-    style.includes("width: 100%") &&
-    style.includes("height: 100%");
-  if (isBanner) {
-    video.pause();
-  }
+  if (isBannerVideo(video)) video.pause();
 }
 
 // Watch for dynamically injected banner videos (Netflix is a SPA)
