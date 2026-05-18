@@ -2,6 +2,12 @@
 
 A Chrome extension that pauses and mutes the autoplay video banner on Netflix's homepage.
 
+The main difference between this extension and the User Setting is that:
+
+User setting: blocks all preview when when you hover over a title image of a video 
+
+Chrome Extension: only blocks the Banner Video from playing
+
 ## Install
 
 **From the Chrome Web Store:** *(link coming soon)*
