@@ -74,36 +74,6 @@
   </div>
   <p class="status" id="status">Active — banner video is blocked.</p>
 
-  <script>
-    const KEY = "netflix_no_autoplay_enabled";
-    const toggle = document.getElementById("toggle");
-    const status = document.getElementById("status");
-
-    // Load saved state
-    chrome.storage.local.get([KEY], (result) => {
-      const enabled = result[KEY] !== false;
-      toggle.checked = enabled;
-      updateStatus(enabled);
-    });
-
-    toggle.addEventListener("change", () => {
-      const enabled = toggle.checked;
-      chrome.storage.local.set({ [KEY]: enabled });
-      updateStatus(enabled);
-
-      // Tell the content script on the active tab
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]) {
-          chrome.tabs.sendMessage(tabs[0].id, { type: "TOGGLE", enabled });
-        }
-      });
-    });
-
-    function updateStatus(enabled) {
-      status.textContent = enabled
-        ? "Active — banner video is blocked."
-        : "Disabled — banner plays normally.";
-    }
-  </script>
+  <script src="popup.js"></script>
 </body>
 </html>

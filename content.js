@@ -3,9 +3,15 @@
 let enabled = true;
 const STORAGE_KEY = "netflix_no_autoplay_enabled";
 
-// Load user preference
+// Load user preference — use exact stored boolean, no ambiguity
 chrome.storage.local.get([STORAGE_KEY], (result) => {
-  enabled = result[STORAGE_KEY] !== false; // default ON
+  if (result[STORAGE_KEY] === undefined) {
+    // First install — default ON and save it explicitly
+    enabled = true;
+    chrome.storage.local.set({ [STORAGE_KEY]: true });
+  } else {
+    enabled = result[STORAGE_KEY]; // true or false, exactly as saved
+  }
   if (enabled) init();
 });
 
@@ -25,22 +31,12 @@ chrome.runtime.onMessage.addListener((msg) => {
 
 function pauseBannerVideos() {
   // Target the hero/billboard video elements Netflix uses
-  // They typically live inside .billboard, .hero, or have a data-videoid attr
   const videos = document.querySelectorAll(
-    '.billboard video, .hero-image-wrapper video, [data-videoid] video, video[data-videoid]'
+    '.billboard video, .hero-image-wrapper video'
   );
 
   videos.forEach(pause);
 
-  // Also catch any video that is positioned absolute and full-width (the banner pattern)
-  document.querySelectorAll("video").forEach((vid) => {
-    const style = vid.getAttribute("style") || "";
-    const isBanner =
-      style.includes("position: absolute") &&
-      style.includes("width: 100%") &&
-      style.includes("height: 100%");
-    if (isBanner) pause(vid);
-  });
 }
 
 function pause(video) {
@@ -55,9 +51,18 @@ function pause(video) {
     video._playOverridden = true;
     const originalPlay = video.play.bind(video);
     video.play = function () {
-      if (!enabled) return originalPlay(); // restored when toggled off
-      console.log("[Netflix No Autoplay] Blocked autoplay on banner video");
-      return Promise.resolve(); // silently swallow the play() call
+      // Re-check storage each time so toggle changes take effect without refresh
+      return new Promise((resolve) => {
+        chrome.storage.local.get([STORAGE_KEY], (result) => {
+          const isEnabled = result[STORAGE_KEY] === undefined ? true : result[STORAGE_KEY];
+          if (!isEnabled) {
+            originalPlay().then(resolve).catch(resolve);
+          } else {
+            console.log("[Netflix No Autoplay] Blocked autoplay on banner video");
+            resolve();
+          }
+        });
+      });
     };
   }
 

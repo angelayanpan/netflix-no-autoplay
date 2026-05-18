@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Netflix No Autoplay Banner",
-  "version": "1.0",
-  "description": "Disables the autoplay video banner on Netflix",
-  "permissions": ["scripting", "storage"],
+  "short_name": "No Autoplay",
+  "version": "1.0.0",
+  "description": "Silences and pauses the autoplay video banner on Netflix's home screen. Lightweight, no tracking, works instantly.",
+  "permissions": ["scripting", "storage", "tabs"],
   "host_permissions": ["https://www.netflix.com/*"],
   "content_scripts": [
     {
@@ -14,6 +15,16 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Netflix No Autoplay"
+    "default_title": "Netflix No Autoplay",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   }
 }
