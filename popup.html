@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body {
+      font-family: 'Helvetica Neue', sans-serif;
+      background: #141414;
+      color: #fff;
+      width: 220px;
+      padding: 16px;
+      margin: 0;
+    }
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      color: #e50914;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .label {
+      font-size: 13px;
+      color: #ccc;
+    }
+    /* Toggle switch */
+    .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+    .switch input { display: none; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #444;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .slider:before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+    input:checked + .slider { background: #e50914; }
+    input:checked + .slider:before { transform: translateX(18px); }
+    .status {
+      font-size: 11px;
+      color: #888;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>No Autoplay Banner</h2>
+  <div class="row">
+    <span class="label">Block banner video</span>
+    <label class="switch">
+      <input type="checkbox" id="toggle" checked />
+      <span class="slider"></span>
+    </label>
+  </div>
+  <p class="status" id="status">Active — banner video is blocked.</p>
+
+  <script>
+    const KEY = "netflix_no_autoplay_enabled";
+    const toggle = document.getElementById("toggle");
+    const status = document.getElementById("status");
+
+    // Load saved state
+    chrome.storage.local.get([KEY], (result) => {
+      const enabled = result[KEY] !== false;
+      toggle.checked = enabled;
+      updateStatus(enabled);
+    });
+
+    toggle.addEventListener("change", () => {
+      const enabled = toggle.checked;
+      chrome.storage.local.set({ [KEY]: enabled });
+      updateStatus(enabled);
+
+      // Tell the content script on the active tab
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, { type: "TOGGLE", enabled });
+        }
+      });
+    });
+
+    function updateStatus(enabled) {
+      status.textContent = enabled
+        ? "Active — banner video is blocked."
+        : "Disabled — banner plays normally.";
+    }
+  </script>
+</body>
+</html>
