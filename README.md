@@ -10,7 +10,7 @@ Chrome Extension: only blocks the Banner Video from playing
 
 ## Install
 
-**From the Chrome Web Store:** *(link coming soon)*
+[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/netflix-no-autoplay-banne/cejphgokeeobmeljijabmihbljfifldo)
 
 **Manually:**
 1. Download or clone this repo
